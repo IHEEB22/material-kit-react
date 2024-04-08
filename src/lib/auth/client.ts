@@ -1,12 +1,18 @@
 'use client';
 
 import type { User } from '@/types/user';
+import axios, { AxiosResponse, AxiosError } from 'axios';
+
+
+
+const BASE_URL = 'https://your-backend-api.com/api/v1';
 
 function generateToken(): string {
   const arr = new Uint8Array(12);
   window.crypto.getRandomValues(arr);
   return Array.from(arr, (v) => v.toString(16).padStart(2, '0')).join('');
 }
+
 
 const user = {
   id: 'USR-000',
@@ -17,8 +23,7 @@ const user = {
 } satisfies User;
 
 export interface SignUpParams {
-  firstName: string;
-  lastName: string;
+  Username: string;
   email: string;
   password: string;
 }
@@ -26,6 +31,7 @@ export interface SignUpParams {
 export interface SignInWithOAuthParams {
   provider: 'google' | 'discord';
 }
+
 
 export interface SignInWithPasswordParams {
   email: string;
@@ -35,11 +41,23 @@ export interface SignInWithPasswordParams {
 export interface ResetPasswordParams {
   email: string;
 }
+interface UserData {
+  id: number;
+  username: string;
+  email: string;
+}
 
 class AuthClient {
   async signUp(_: SignUpParams): Promise<{ error?: string }> {
     // Make API request
-
+    try {
+      const response: AxiosResponse<User> = await axios.get<UserData>(`${BASE_URL}/user`);
+      return response.data;
+    } catch (error) {
+      // Handle errors
+      const axiosError = error as AxiosError<ErrorResponse>;
+      throw new Error(axiosError.response?.data.message || 'An error occurred');
+    }
     // We do not handle the API, so we'll just generate a token and store it in localStorage.
     const token = generateToken();
     localStorage.setItem('custom-auth-token', token);
@@ -94,5 +112,7 @@ class AuthClient {
     return {};
   }
 }
+
+
 
 export const authClient = new AuthClient();
